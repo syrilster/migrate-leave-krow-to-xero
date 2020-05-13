@@ -1,24 +1,41 @@
 package config
 
 import (
-	"github.com/caarlos0/env"
-	log "github.com/sirupsen/logrus"
+	"os"
+	"strconv"
 )
 
 type envConfig struct {
-	LogLevel string `env:"LOG_LEVEL"`
-
-	ServerPort int    `env:"SERVER_PORT" envDefault:"8080"`
-	Version    string `env:"VERSION" envDefault:"v1"`
-	BaseUrl    string `env:"BASE_URL"`
-
-	CurrencyExchangeEndpoint string `env:"CURRENCY_EXCHANGE_ENDPOINT" envDefault:"http://currency-exchange-service.default.svc.cluster.local:8000"`
+	LogLevel   string
+	ServerPort int
+	Version    string
+	BaseUrl    string
 }
 
 func newEnvironmentConfig() *envConfig {
-	cfg := &envConfig{}
-	if err := env.Parse(cfg); err != nil {
-		log.Fatal("cannot find configs for server: \n", err)
+	return &envConfig{
+		LogLevel:   getEnvString("LOG_LEVEL", "INFO"),
+		ServerPort: getEnvInt("SERVER_PORT", 0),
+		Version:    getEnvString("VERSION", ""),
+		BaseUrl:    "",
 	}
-	return cfg
+}
+
+// helper function to read an environment or return a default value
+func getEnvString(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+
+	return defaultVal
+}
+
+// helper function to read an environment or return a default value
+func getEnvInt(key string, defaultVal int) int {
+	val, err := strconv.Atoi(getEnvString(key, ""))
+	if err == nil {
+		return val
+	}
+
+	return defaultVal
 }
