@@ -6,18 +6,24 @@ import (
 )
 
 type envConfig struct {
-	LogLevel   string
-	ServerPort int
-	Version    string
-	BaseUrl    string
+	LogLevel     string
+	ServerPort   int
+	Version      string
+	BaseUrl      string
+	XeroKey      string
+	XeroSecret   string
+	XeroEndpoint string
 }
 
-func newEnvironmentConfig() *envConfig {
+func NewEnvironmentConfig() *envConfig {
 	return &envConfig{
-		LogLevel:   getEnvString("LOG_LEVEL", "INFO"),
-		ServerPort: getEnvInt("SERVER_PORT", 0),
-		Version:    getEnvString("VERSION", ""),
-		BaseUrl:    "",
+		LogLevel:     getEnvString("LOG_LEVEL", "INFO"),
+		ServerPort:   getEnvInt("SERVER_PORT", 0),
+		Version:      getEnvString("VERSION", ""),
+		BaseUrl:      "",
+		XeroKey:      getEnvString("XERO_KEY", ""),
+		XeroSecret:   getEnvString("XERO_SECRET", ""),
+		XeroEndpoint: getEnvString("XERO_ENDPOINT", ""),
 	}
 }
 
