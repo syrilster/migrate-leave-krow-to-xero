@@ -31,11 +31,9 @@ func NewService(c xero.ClientInterface) *Service {
 func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEmployees, error) {
 	var connections []model.Connection
 	var employees []model.Employee
-	var xeroEmployeesMap = make(map[string]xero.Employee)
-	//var leaveRequest map[string][]model.KrowLeaveRequest
+	var xeroEmployeesMap map[string]xero.Employee
 	var leaveReqChan = make(chan map[string]map[string][]model.KrowLeaveRequest)
 
-	//var empResp *xero.EmpResponse
 	ctxLogger := log.WithContext(ctx)
 	ctxLogger.Infof("Inside the MigrateLeaveKrowToXero service")
 
@@ -50,121 +48,143 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 	leaveRequests := <-leaveReqChan
 
 	for _, c := range *resp {
+		xeroEmployeesMap = make(map[string]xero.Employee)
 		connection := model.Connection{
 			TenantID:   c.TenantID,
 			TenantType: c.TenantType,
 			OrgName:    c.OrgName,
 		}
-		empResp, err := service.client.GetEmployees(ctx, connection.TenantID)
+		empResponse, err := service.client.GetEmployees(ctx, connection.TenantID)
 		if err != nil {
 			ctxLogger.Infof("Failed to fetch employees from Xero: %v", err)
 			return nil, err
 		}
-		for _, emp := range empResp.Employees {
+		for _, emp := range empResponse.Employees {
 			xeroEmployeesMap[emp.FirstName+" "+emp.LastName] = emp
 		}
 
-		for emp, leaveReq := range leaveRequests[connection.OrgName] {
-			var leaveBalanceMap = make(map[string]xero.LeaveBalance)
-			var leaveTypeID string
-			var leaveStartDate string
-			var leaveEndDate string
-			var unpaidLeave float64
-			var leaveUnits float64
-			empID := xeroEmployeesMap[emp].EmployeeID
-			payCalendarID := xeroEmployeesMap[emp].PayrollCalendarID
-			payCalendarResp, err := service.client.GetEmployeePayrollCalendar(ctx, connection.TenantID, payCalendarID)
-			if err != nil {
-				ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
-			}
-			payPeriodEndDate := payCalendarResp.PayrollCalendars[0].PaymentDate
-			leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, connection.TenantID, empID)
-			if err != nil {
-				ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
-			}
-			for _, leaveBal := range leaveBalance.Employee[0].LeaveBalance {
-				leaveBalanceMap[leaveBal.LeaveType] = leaveBal
-			}
-			for _, leave := range leaveReq {
-				var leavePeriods = make([]xero.LeavePeriod, 1)
-				if lb, ok := leaveBalanceMap[leave.LeaveType]; ok {
-					leaveReqUnit := leave.Hours
-					leaveBalUnit := lb.NumberOfUnits
-					leaveTypeID = lb.LeaveTypeID
-					leaveStartDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
-					leaveEndDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
-					if leaveReqUnit >= leaveBalUnit {
-						if leaveBalUnit > 0 {
-							leaveUnits = leaveBalUnit
-							unpaidLeave += leaveReqUnit - leaveBalUnit
-						} else {
-							//Employee has negative or zero leave balance and hence unpaid leave
-							leaveUnits = 0
-							unpaidLeave += leaveReqUnit
-						}
-					} else {
-						leaveUnits = leaveReqUnit
-					}
-					updatedLeaveBalance := xero.LeaveBalance{
-						LeaveType:     leave.LeaveType,
-						LeaveTypeID:   leaveTypeID,
-						NumberOfUnits: lb.NumberOfUnits - leaveUnits,
-						TypeOfUnits:   lb.TypeOfUnits,
-					}
-					leaveBalanceMap[leave.LeaveType] = updatedLeaveBalance
-
-					if leaveUnits > 0 {
-						paidLeave := xero.LeavePeriod{
-							PayPeriodEndDate: payPeriodEndDate,
-							NumberOfUnits:    leaveUnits,
-						}
-
-						leavePeriods[0] = paidLeave
-						leaveApplication := xero.LeaveApplicationRequest{
-							EmployeeID:   empID,
-							LeaveTypeID:  leaveTypeID,
-							StartDate:    leaveStartDate,
-							EndDate:      leaveEndDate,
-							Title:        leave.LeaveType,
-							LeavePeriods: leavePeriods,
-						}
-
-						err := service.client.EmployeeLeaveApplication(ctx, connection.TenantID, leaveApplication)
-						if err != nil {
-							ctxLogger.WithError(err).Errorf("failed to post Leave application to xero for employee %v", emp)
-						}
-					}
-				} else {
-					ctxLogger.Infof("Leave type not found in Xero: %v", err)
-				}
-			}
-			if unpaidLeave > 0 {
-				unpaidLeavePeriod := make([]xero.LeavePeriod, 1)
-				unpaidLeaveReq := xero.LeavePeriod{
-					PayPeriodEndDate: payPeriodEndDate,
-					NumberOfUnits:    unpaidLeave,
-				}
-				unpaidLeavePeriod[0] = unpaidLeaveReq
-
-				unpaidLeaveApplication := xero.LeaveApplicationRequest{
-					EmployeeID:   empID,
-					LeaveTypeID:  leaveTypeID,
-					StartDate:    leaveStartDate,
-					EndDate:      leaveEndDate,
-					Title:        unPaidLeave,
-					LeavePeriods: unpaidLeavePeriod,
-				}
-
-				err = service.client.EmployeeLeaveApplication(ctx, connection.TenantID, unpaidLeaveApplication)
-				if err != nil {
-					ctxLogger.WithError(err).Errorf("failed to post Leave application to xero for employee %v", emp)
-				}
-			}
+		for empName, leaveReq := range leaveRequests[connection.OrgName] {
+			service.processLeaveRequestByEmp(ctx, xeroEmployeesMap, empName, leaveReq, connection)
 		}
 		connections = append(connections, connection)
 	}
 
 	return employees, nil
+}
+
+func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmployeesMap map[string]xero.Employee,
+	empName string, leaveReq []model.KrowLeaveRequest, connection model.Connection) {
+	ctxLogger := log.WithContext(ctx)
+	if _, ok := xeroEmployeesMap[empName]; ok {
+		empID := xeroEmployeesMap[empName].EmployeeID
+		payCalendarID := xeroEmployeesMap[empName].PayrollCalendarID
+		payCalendarResp, err := service.client.GetEmployeePayrollCalendar(ctx, connection.TenantID, payCalendarID)
+		if err != nil {
+			ctxLogger.Infof("Failed to fetch employee payroll calendar settings from Xero: %v", err)
+		}
+
+		leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, connection.TenantID, empID)
+		if err != nil {
+			ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
+		}
+
+		go service.reconcileLeaveRequestAndApply(ctx, empID, empName, connection, leaveReq, payCalendarResp, leaveBalance)
+	} else {
+		ctxLogger.Infof("Employee not found in Xero: %v", empName)
+	}
+}
+
+func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID string, empName string, connection model.Connection,
+	leaveReq []model.KrowLeaveRequest, payCalendarResp *xero.PayrollCalendarResponse, leaveBalance *xero.LeaveBalanceResponse) {
+	var leaveBalanceMap = make(map[string]xero.LeaveBalance)
+	var leaveTypeID string
+	var leaveStartDate string
+	var leaveEndDate string
+	var unpaidLeave float64
+	var leaveUnits float64
+
+	ctxLogger := log.WithContext(ctx)
+	payPeriodEndDate := payCalendarResp.PayrollCalendars[0].PaymentDate
+
+	for _, leaveBal := range leaveBalance.Employee[0].LeaveBalance {
+		leaveBalanceMap[leaveBal.LeaveType] = leaveBal
+	}
+
+	for _, leave := range leaveReq {
+		var leavePeriods = make([]xero.LeavePeriod, 1)
+		if lb, ok := leaveBalanceMap[leave.LeaveType]; ok {
+			leaveReqUnit := leave.Hours
+			leaveBalUnit := lb.NumberOfUnits
+			leaveTypeID = lb.LeaveTypeID
+			leaveStartDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
+			leaveEndDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
+			if leaveReqUnit >= leaveBalUnit {
+				if leaveBalUnit > 0 {
+					leaveUnits = leaveBalUnit
+					unpaidLeave += leaveReqUnit - leaveBalUnit
+				} else {
+					//Employee has negative or zero leave balance and hence unpaid leave
+					leaveUnits = 0
+					unpaidLeave += leaveReqUnit
+				}
+			} else {
+				leaveUnits = leaveReqUnit
+			}
+			updatedLeaveBalance := xero.LeaveBalance{
+				LeaveType:     leave.LeaveType,
+				LeaveTypeID:   leaveTypeID,
+				NumberOfUnits: lb.NumberOfUnits - leaveUnits,
+				TypeOfUnits:   lb.TypeOfUnits,
+			}
+			leaveBalanceMap[leave.LeaveType] = updatedLeaveBalance
+
+			if leaveUnits > 0 {
+				paidLeave := xero.LeavePeriod{
+					PayPeriodEndDate: payPeriodEndDate,
+					NumberOfUnits:    leaveUnits,
+				}
+
+				leavePeriods[0] = paidLeave
+				leaveApplication := xero.LeaveApplicationRequest{
+					EmployeeID:   empID,
+					LeaveTypeID:  leaveTypeID,
+					StartDate:    leaveStartDate,
+					EndDate:      leaveEndDate,
+					Title:        leave.LeaveType,
+					LeavePeriods: leavePeriods,
+				}
+				go service.applyLeaveRequestToXero(ctx, connection.TenantID, leaveApplication, empName)
+			}
+		} else {
+			ctxLogger.Infof("Leave type not found in Xero: %v", leave.LeaveType)
+		}
+	}
+	if unpaidLeave > 0 {
+		unpaidLeavePeriod := make([]xero.LeavePeriod, 1)
+		unpaidLeaveReq := xero.LeavePeriod{
+			PayPeriodEndDate: payPeriodEndDate,
+			NumberOfUnits:    unpaidLeave,
+		}
+		unpaidLeavePeriod[0] = unpaidLeaveReq
+
+		unpaidLeaveApplication := xero.LeaveApplicationRequest{
+			EmployeeID:   empID,
+			LeaveTypeID:  leaveTypeID,
+			StartDate:    leaveStartDate,
+			EndDate:      leaveEndDate,
+			Title:        unPaidLeave,
+			LeavePeriods: unpaidLeavePeriod,
+		}
+		go service.applyLeaveRequestToXero(ctx, connection.TenantID, unpaidLeaveApplication, empName)
+	}
+}
+
+func (service Service) applyLeaveRequestToXero(ctx context.Context, tenantID string, leaveApplication xero.LeaveApplicationRequest, empName string) {
+	ctxLogger := log.WithContext(ctx)
+	err := service.client.EmployeeLeaveApplication(ctx, tenantID, leaveApplication)
+	if err != nil {
+		ctxLogger.WithError(err).Errorf("failed to post Leave application to xero for employee %v", empName)
+	}
 }
 
 func extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]model.KrowLeaveRequest) {
@@ -198,7 +218,8 @@ func extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]mo
 		if leaveType == "" {
 			leaveType = row[3]
 		}
-		r := strings.NewReplacer("Carers", "Carer's")
+		r := strings.NewReplacer("Carers", "Carer's",
+			"Unpaid", "Other Unpaid")
 		leaveType = r.Replace(leaveType)
 		empName := row[0]
 		orgName := row[6]
