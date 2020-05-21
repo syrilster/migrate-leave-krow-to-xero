@@ -1,17 +1,11 @@
 package config
 
 import (
-	"github.com/gorilla/sessions"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/gothic"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/xero"
-	"math"
 	"net/http"
-	"os"
 	_ "os"
 	"time"
 
-	"github.com/XeroAPI/xerogolang"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/customhttp"
 )
 
@@ -35,18 +29,24 @@ func (cfg *ApplicationConfig) BaseURL() string {
 	return cfg.envValues.BaseUrl
 }
 
+//XeroEndpoint returns the xero endpoint
 func (cfg *ApplicationConfig) XeroEndpoint() xero.ClientInterface {
 	return cfg.xeroClient
 }
 
-func (cfg *ApplicationConfig) XeroProvider() *xerogolang.Provider {
-	envValues := NewEnvironmentConfig()
-	provider := xerogolang.New(envValues.XeroKey, envValues.XeroSecret, "https://digio.com.au/")
-	goth.UseProviders(provider)
-	store := sessions.NewFilesystemStore(os.TempDir(), []byte("xero_gothic_session"))
-	store.MaxLength(math.MaxInt64)
-	gothic.Store = store
-	return provider
+//XeroKey returns the xero client id
+func (cfg *ApplicationConfig) XeroKey() string {
+	return cfg.envValues.XeroKey
+}
+
+//XeroSecret returns the xero client secret
+func (cfg *ApplicationConfig) XeroSecret() string {
+	return cfg.envValues.XeroSecret
+}
+
+//XeroAuthEndpoint returns the auth related endpoint
+func (cfg *ApplicationConfig) XeroAuthEndpoint() string {
+	return cfg.envValues.XeroAuthEndpoint
 }
 
 //NewApplicationConfig loads config values from environment and initialises config

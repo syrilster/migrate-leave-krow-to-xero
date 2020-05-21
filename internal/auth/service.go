@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/model"
 	"io/ioutil"
@@ -13,10 +12,16 @@ import (
 )
 
 type Service struct {
+	xeroKey          string
+	xeroSecret       string
+	xeroAuthEndpoint string
 }
 
-func NewAuthService() *Service {
-	return &Service{}
+func NewAuthService(key string, secret string, authURL string) *Service {
+	return &Service{
+		xeroKey:          key,
+		xeroSecret:       secret,
+		xeroAuthEndpoint: authURL}
 }
 
 func (service Service) OAuthService(ctx context.Context, code string) (*model.XeroResponse, error) {
@@ -27,14 +32,12 @@ func (service Service) OAuthService(ctx context.Context, code string) (*model.Xe
 	data.Set("code", code)
 	data.Set("redirect_uri", "http://localhost:8080/v1/oauth/redirect")
 
-	// to get our access token
-	reqURL := fmt.Sprint("https://identity.xero.com/connect/token")
-	req, err := http.NewRequest(http.MethodPost, reqURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest(http.MethodPost, service.xeroAuthEndpoint, strings.NewReader(data.Encode()))
 	if err != nil {
 		ctxLogger.WithError(err).Error("could not create HTTP request")
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Basic MjY1MjFCODdEOTJGNDI5QUI3RkRBQUZGMTk2Rjk5MjI6eHpHR1ZJMkNYc1RPZGFnUTgxVzVBSkdtRWdONG9SeWdVOXFhS2VKOFJaWDkwM2xV")
+	req.SetBasicAuth(service.xeroKey, service.xeroSecret)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("accept", "application/json")
 
