@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+const redirectURL = "http://localhost:3000/upload"
+
 func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -24,6 +26,7 @@ func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		util.WithBodyAndStatus("Connected to Xero", http.StatusOK, w)
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		return
 	}
 }

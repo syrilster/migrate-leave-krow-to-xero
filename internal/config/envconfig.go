@@ -14,6 +14,7 @@ type envConfig struct {
 	XeroSecret       string
 	XeroEndpoint     string
 	XeroAuthEndpoint string
+	XeroRedirectURI  string
 }
 
 func NewEnvironmentConfig() *envConfig {
@@ -26,6 +27,7 @@ func NewEnvironmentConfig() *envConfig {
 		XeroSecret:       getEnvString("XERO_SECRET", ""),
 		XeroEndpoint:     getEnvString("XERO_ENDPOINT", ""),
 		XeroAuthEndpoint: getEnvString("XERO_AUTH_ENDPOINT", ""),
+		XeroRedirectURI:  getEnvString("XERO_REDIRECT_URI", ""),
 	}
 }
 

@@ -49,6 +49,11 @@ func (cfg *ApplicationConfig) XeroAuthEndpoint() string {
 	return cfg.envValues.XeroAuthEndpoint
 }
 
+//XeroRedirectURI returns the redirect URI
+func (cfg *ApplicationConfig) XeroRedirectURI() string {
+	return cfg.envValues.XeroRedirectURI
+}
+
 //NewApplicationConfig loads config values from environment and initialises config
 func NewApplicationConfig() *ApplicationConfig {
 	envValues := NewEnvironmentConfig()

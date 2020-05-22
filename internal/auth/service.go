@@ -15,22 +15,25 @@ type Service struct {
 	xeroKey          string
 	xeroSecret       string
 	xeroAuthEndpoint string
+	xeroRedirectURI  string
 }
 
-func NewAuthService(key string, secret string, authURL string) *Service {
+func NewAuthService(key string, secret string, authURL string, redirectURI string) *Service {
 	return &Service{
 		xeroKey:          key,
 		xeroSecret:       secret,
-		xeroAuthEndpoint: authURL}
+		xeroAuthEndpoint: authURL,
+		xeroRedirectURI:  redirectURI,
+	}
 }
 
 func (service Service) OAuthService(ctx context.Context, code string) (*model.XeroResponse, error) {
 	ctxLogger := log.WithContext(ctx)
-	ctxLogger.Infof("Inside the MigrateLeaveKrowToXero service")
+	ctxLogger.Infof("Inside the Auth service")
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)
-	data.Set("redirect_uri", "http://localhost:8080/v1/oauth/redirect")
+	data.Set("redirect_uri", service.xeroRedirectURI)
 
 	req, err := http.NewRequest(http.MethodPost, service.xeroAuthEndpoint, strings.NewReader(data.Encode()))
 	if err != nil {
