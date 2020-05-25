@@ -17,6 +17,7 @@ const eliiza = "Eliiza"
 const kasna = "Kasna"
 const mantel = "Mantel Group"
 const unPaidLeave = "Other Unpaid Leave"
+const xlsFileLocation = "/Users/syril/sample.xlsx"
 
 type Service struct {
 	client xero.ClientInterface
@@ -36,7 +37,7 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 	var leaveReqChan = make(chan map[string]map[string][]model.KrowLeaveRequest)
 
 	ctxLogger := log.WithContext(ctx)
-	ctxLogger.Infof("Inside the MigrateLeaveKrowToXero service")
+	ctxLogger.Infof("Executing MigrateLeaveKrowToXero service")
 
 	go service.extractDataFromKrow(ctx, leaveReqChan)
 
@@ -74,7 +75,7 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 		}
 
 		for empName, leaveReq := range leaveRequests[connection.OrgName] {
-			service.processLeaveRequestByEmp(ctx, xeroEmployeesMap, empName, leaveReq, connection, payrollCalendarMap)
+			service.processLeaveRequestByEmp(ctx, xeroEmployeesMap, empName, leaveReq, connection.TenantID, payrollCalendarMap)
 		}
 		connections = append(connections, connection)
 	}
@@ -83,17 +84,17 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 }
 
 func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmployeesMap map[string]xero.Employee,
-	empName string, leaveReq []model.KrowLeaveRequest, connection model.Connection, payrollCalendarMap map[string]string) {
+	empName string, leaveReq []model.KrowLeaveRequest, tenantID string, payrollCalendarMap map[string]string) {
 	ctxLogger := log.WithContext(ctx)
 	if _, ok := xeroEmployeesMap[empName]; ok {
 		empID := xeroEmployeesMap[empName].EmployeeID
 		payCalendarID := xeroEmployeesMap[empName].PayrollCalendarID
 		if paymentDate, ok := payrollCalendarMap[payCalendarID]; ok {
-			leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, connection.TenantID, empID)
+			leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, tenantID, empID)
 			if err != nil {
 				ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
 			}
-			go service.reconcileLeaveRequestAndApply(ctx, empID, empName, connection, leaveReq, paymentDate, leaveBalance)
+			go service.reconcileLeaveRequestAndApply(ctx, empID, empName, tenantID, leaveReq, paymentDate, leaveBalance)
 		} else {
 			ctxLogger.Infof("Failed to fetch employee payroll calendar settings from Xero. Employee %v ", empName)
 		}
@@ -102,7 +103,7 @@ func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmploye
 	}
 }
 
-func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID string, empName string, connection model.Connection,
+func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID string, empName string, tenantID string,
 	leaveReq []model.KrowLeaveRequest, paymentDate string, leaveBalance *xero.LeaveBalanceResponse) {
 	var leaveBalanceMap = make(map[string]xero.LeaveBalance)
 	var leaveTypeID string
@@ -112,7 +113,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 	var leaveUnits float64
 
 	ctxLogger := log.WithContext(ctx)
-
+	ctxLogger.Infof("Calculating leaves to be applied for Employee %v", empName)
 	for _, leaveBal := range leaveBalance.Employee[0].LeaveBalance {
 		leaveBalanceMap[leaveBal.LeaveType] = leaveBal
 	}
@@ -160,7 +161,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 					Title:        leave.LeaveType,
 					LeavePeriods: leavePeriods,
 				}
-				go service.applyLeaveRequestToXero(ctx, connection.TenantID, leaveApplication, empName)
+				go service.applyLeaveRequestToXero(ctx, tenantID, leaveApplication, empName)
 			}
 		} else {
 			ctxLogger.Infof("Leave type not found in Xero: %v", leave.LeaveType)
@@ -182,12 +183,13 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 			Title:        unPaidLeave,
 			LeavePeriods: unpaidLeavePeriod,
 		}
-		go service.applyLeaveRequestToXero(ctx, connection.TenantID, unpaidLeaveApplication, empName)
+		go service.applyLeaveRequestToXero(ctx, tenantID, unpaidLeaveApplication, empName)
 	}
 }
 
 func (service Service) applyLeaveRequestToXero(ctx context.Context, tenantID string, leaveApplication xero.LeaveApplicationRequest, empName string) {
 	ctxLogger := log.WithContext(ctx)
+	ctxLogger.Infof("Applying leave request for Employee: %v", empName)
 	err := service.client.EmployeeLeaveApplication(ctx, tenantID, leaveApplication)
 	if err != nil {
 		ctxLogger.WithError(err).Errorf("failed to post Leave application to xero for employee %v", empName)
@@ -202,7 +204,7 @@ func (service Service) extractDataFromKrow(ctx context.Context, ch chan map[stri
 	var kasnaLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	var mantelLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	ctxLogger := log.WithContext(ctx)
-	f, err := excelize.OpenFile("/Users/syril/test.xlsx")
+	f, err := excelize.OpenFile(xlsFileLocation)
 	if err != nil {
 		ctxLogger.WithError(err).Error("unable to open the xls file provided")
 		ch <- leaveRequests

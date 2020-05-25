@@ -15,7 +15,6 @@ func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http
 	return func(res http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		contextLogger := log.WithContext(ctx)
-		contextLogger.Info("Inside Handler")
 
 		err := parseRequestBody(req)
 		if err != nil {

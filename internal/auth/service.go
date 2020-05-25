@@ -29,7 +29,6 @@ func NewAuthService(key string, secret string, authURL string, redirectURI strin
 
 func (service Service) OAuthService(ctx context.Context, code string) (*model.XeroResponse, error) {
 	ctxLogger := log.WithContext(ctx)
-	ctxLogger.Infof("Inside the Auth service")
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)

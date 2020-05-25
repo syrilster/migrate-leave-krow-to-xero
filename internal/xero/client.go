@@ -81,7 +81,7 @@ func (c *client) GetConnections(ctx context.Context) (*ConnectionResp, error) {
 
 func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpResponse, error) {
 	contextLogger := log.WithContext(ctx)
-	contextLogger.Info("Inside the GetEmployees func")
+	contextLogger.Info("Fetching all employees for tenant: ", tenantID)
 	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroEmployeesEndpoint(), nil)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpRespons
 
 func (c *client) EmployeeLeaveBalance(ctx context.Context, tenantID string, empID string) (*LeaveBalanceResponse, error) {
 	contextLogger := log.WithContext(ctx)
-	contextLogger.Info("Inside the EmployeeLeaveBalance func")
+	contextLogger.Info("Fetching leave balance for employee: %v", empID)
 	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroLeaveBalanceEndpoint(empID), nil)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,6 @@ func (c *client) EmployeeLeaveBalance(ctx context.Context, tenantID string, empI
 
 func (c *client) EmployeeLeaveApplication(ctx context.Context, tenantID string, request LeaveApplicationRequest) error {
 	contextLogger := log.WithContext(ctx)
-	contextLogger.Info("Inside the EmployeeLeaveApplication func")
 	var req = make([]LeaveApplicationRequest, 1)
 	req[0] = request
 	payload, err := json.Marshal(req)
@@ -221,7 +220,7 @@ func (c *client) EmployeeLeaveApplication(ctx context.Context, tenantID string, 
 
 func (c *client) GetPayrollCalendars(ctx context.Context, tenantID string) (*PayrollCalendarResponse, error) {
 	contextLogger := log.WithContext(ctx)
-	contextLogger.Info("Inside the GetEmployeePayrollCalendar func")
+	contextLogger.Info("Fetching payoll calendar settings for tenant: ", tenantID)
 	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroPayrollCalendarEndpoint(), nil)
 	if err != nil {
 		return nil, err
