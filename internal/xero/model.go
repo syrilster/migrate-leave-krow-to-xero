@@ -51,6 +51,7 @@ type PayrollCalendarResponse struct {
 }
 
 type PayrollCalendar struct {
-	CalendarType string `json:"CalendarType"`
-	PaymentDate  string `json:"PaymentDate"`
+	PayrollCalendarID string `json:"PayrollCalendarID"`
+	CalendarType      string `json:"CalendarType"`
+	PaymentDate       string `json:"PaymentDate"`
 }

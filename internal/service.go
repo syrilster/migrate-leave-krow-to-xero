@@ -32,12 +32,13 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 	var connections []model.Connection
 	var employees []model.Employee
 	var xeroEmployeesMap map[string]xero.Employee
+	var payrollCalendarMap = make(map[string]string)
 	var leaveReqChan = make(chan map[string]map[string][]model.KrowLeaveRequest)
 
 	ctxLogger := log.WithContext(ctx)
 	ctxLogger.Infof("Inside the MigrateLeaveKrowToXero service")
 
-	go extractDataFromKrow(ctx, leaveReqChan)
+	go service.extractDataFromKrow(ctx, leaveReqChan)
 
 	resp, err := service.client.GetConnections(ctx)
 	if err != nil {
@@ -63,8 +64,17 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 			xeroEmployeesMap[emp.FirstName+" "+emp.LastName] = emp
 		}
 
+		payCalendarResp, err := service.client.GetPayrollCalendars(ctx, connection.TenantID)
+		if err != nil {
+			ctxLogger.Infof("Failed to fetch employee payroll calendar settings from Xero: %v", err)
+		}
+
+		for _, p := range payCalendarResp.PayrollCalendars {
+			payrollCalendarMap[p.PayrollCalendarID] = p.PaymentDate
+		}
+
 		for empName, leaveReq := range leaveRequests[connection.OrgName] {
-			service.processLeaveRequestByEmp(ctx, xeroEmployeesMap, empName, leaveReq, connection)
+			service.processLeaveRequestByEmp(ctx, xeroEmployeesMap, empName, leaveReq, connection, payrollCalendarMap)
 		}
 		connections = append(connections, connection)
 	}
@@ -73,29 +83,27 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEm
 }
 
 func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmployeesMap map[string]xero.Employee,
-	empName string, leaveReq []model.KrowLeaveRequest, connection model.Connection) {
+	empName string, leaveReq []model.KrowLeaveRequest, connection model.Connection, payrollCalendarMap map[string]string) {
 	ctxLogger := log.WithContext(ctx)
 	if _, ok := xeroEmployeesMap[empName]; ok {
 		empID := xeroEmployeesMap[empName].EmployeeID
 		payCalendarID := xeroEmployeesMap[empName].PayrollCalendarID
-		payCalendarResp, err := service.client.GetEmployeePayrollCalendar(ctx, connection.TenantID, payCalendarID)
-		if err != nil {
-			ctxLogger.Infof("Failed to fetch employee payroll calendar settings from Xero: %v", err)
+		if paymentDate, ok := payrollCalendarMap[payCalendarID]; ok {
+			leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, connection.TenantID, empID)
+			if err != nil {
+				ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
+			}
+			go service.reconcileLeaveRequestAndApply(ctx, empID, empName, connection, leaveReq, paymentDate, leaveBalance)
+		} else {
+			ctxLogger.Infof("Failed to fetch employee payroll calendar settings from Xero. Employee %v ", empName)
 		}
-
-		leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, connection.TenantID, empID)
-		if err != nil {
-			ctxLogger.Infof("Failed to fetch employee leave balance from Xero: %v", err)
-		}
-
-		go service.reconcileLeaveRequestAndApply(ctx, empID, empName, connection, leaveReq, payCalendarResp, leaveBalance)
 	} else {
 		ctxLogger.Infof("Employee not found in Xero: %v", empName)
 	}
 }
 
 func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID string, empName string, connection model.Connection,
-	leaveReq []model.KrowLeaveRequest, payCalendarResp *xero.PayrollCalendarResponse, leaveBalance *xero.LeaveBalanceResponse) {
+	leaveReq []model.KrowLeaveRequest, paymentDate string, leaveBalance *xero.LeaveBalanceResponse) {
 	var leaveBalanceMap = make(map[string]xero.LeaveBalance)
 	var leaveTypeID string
 	var leaveStartDate string
@@ -104,7 +112,6 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 	var leaveUnits float64
 
 	ctxLogger := log.WithContext(ctx)
-	payPeriodEndDate := payCalendarResp.PayrollCalendars[0].PaymentDate
 
 	for _, leaveBal := range leaveBalance.Employee[0].LeaveBalance {
 		leaveBalanceMap[leaveBal.LeaveType] = leaveBal
@@ -140,7 +147,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 
 			if leaveUnits > 0 {
 				paidLeave := xero.LeavePeriod{
-					PayPeriodEndDate: payPeriodEndDate,
+					PayPeriodEndDate: paymentDate,
 					NumberOfUnits:    leaveUnits,
 				}
 
@@ -162,7 +169,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 	if unpaidLeave > 0 {
 		unpaidLeavePeriod := make([]xero.LeavePeriod, 1)
 		unpaidLeaveReq := xero.LeavePeriod{
-			PayPeriodEndDate: payPeriodEndDate,
+			PayPeriodEndDate: paymentDate,
 			NumberOfUnits:    unpaidLeave,
 		}
 		unpaidLeavePeriod[0] = unpaidLeaveReq
@@ -187,9 +194,9 @@ func (service Service) applyLeaveRequestToXero(ctx context.Context, tenantID str
 	}
 }
 
-func extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]model.KrowLeaveRequest) {
+func (service Service) extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]model.KrowLeaveRequest) {
 	var leaveRequests = make(map[string]map[string][]model.KrowLeaveRequest)
-	var digioLeaveReq = make(map[string][]model.KrowLeaveRequest)
+	var digIOLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	var eliizaLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	var cmdLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	var kasnaLeaveReq = make(map[string][]model.KrowLeaveRequest)
@@ -231,7 +238,7 @@ func extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]mo
 		}
 		switch orgName {
 		case digIO:
-			digioLeaveReq[empName] = append(digioLeaveReq[empName], leaveReq)
+			digIOLeaveReq[empName] = append(digIOLeaveReq[empName], leaveReq)
 			break
 		case cmd:
 			cmdLeaveReq[empName] = append(cmdLeaveReq[empName], leaveReq)
@@ -248,7 +255,7 @@ func extractDataFromKrow(ctx context.Context, ch chan map[string]map[string][]mo
 		}
 	}
 
-	leaveRequests[digIO] = digioLeaveReq
+	leaveRequests[digIO] = digIOLeaveReq
 	leaveRequests[cmd] = cmdLeaveReq
 	leaveRequests[eliiza] = eliizaLeaveReq
 	leaveRequests[kasna] = kasnaLeaveReq

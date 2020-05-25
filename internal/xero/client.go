@@ -17,7 +17,7 @@ type ClientInterface interface {
 	GetConnections(ctx context.Context) (*ConnectionResp, error)
 	EmployeeLeaveBalance(ctx context.Context, tenantID string, empID string) (*LeaveBalanceResponse, error)
 	EmployeeLeaveApplication(ctx context.Context, tenantID string, request LeaveApplicationRequest) error
-	GetEmployeePayrollCalendar(ctx context.Context, tenantID string, payrollCalendarID string) (*PayrollCalendarResponse, error)
+	GetPayrollCalendars(ctx context.Context, tenantID string) (*PayrollCalendarResponse, error)
 }
 
 func NewClient(endpoint string, c customhttp.HTTPCommand) *client {
@@ -219,10 +219,10 @@ func (c *client) EmployeeLeaveApplication(ctx context.Context, tenantID string, 
 	return nil
 }
 
-func (c *client) GetEmployeePayrollCalendar(ctx context.Context, tenantID string, payrollCalendarID string) (*PayrollCalendarResponse, error) {
+func (c *client) GetPayrollCalendars(ctx context.Context, tenantID string) (*PayrollCalendarResponse, error) {
 	contextLogger := log.WithContext(ctx)
 	contextLogger.Info("Inside the GetEmployeePayrollCalendar func")
-	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroPayrollCalendarEndpoint(payrollCalendarID), nil)
+	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroPayrollCalendarEndpoint(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +283,8 @@ func (c *client) buildXeroLeaveApplicationEndpoint() string {
 	return c.URL + "/payroll.xro/1.0/LeaveApplications"
 }
 
-func (c *client) buildXeroPayrollCalendarEndpoint(payCalendarID string) string {
-	return c.URL + "/payroll.xro/1.0/PayrollCalendars/" + payCalendarID
+func (c *client) buildXeroPayrollCalendarEndpoint() string {
+	return c.URL + "/payroll.xro/1.0/PayrollCalendars"
 }
 
 func getAccessToken(ctx context.Context) (string, error) {

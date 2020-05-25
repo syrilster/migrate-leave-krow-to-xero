@@ -1,3 +1,5 @@
+# github.com/360EntSecGroup-Skylar/excelize/v2 v2.2.0
+github.com/360EntSecGroup-Skylar/excelize/v2
 # github.com/gorilla/handlers v1.4.2
 github.com/gorilla/handlers
 # github.com/gorilla/mux v1.7.4
@@ -6,7 +8,35 @@ github.com/gorilla/mux
 github.com/joho/godotenv
 # github.com/konsorten/go-windows-terminal-sequences v1.0.3
 github.com/konsorten/go-windows-terminal-sequences
+# github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
+github.com/mohae/deepcopy
 # github.com/sirupsen/logrus v1.6.0
 github.com/sirupsen/logrus
-# golang.org/x/sys v0.0.0-20190422165155-953cdadca894
+# github.com/tealeg/xlsx v1.0.5
+github.com/tealeg/xlsx
+# github.com/xuri/efp v0.0.0-20191019043341-b7dc4fe9aa91
+github.com/xuri/efp
+# golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
+golang.org/x/net/html
+golang.org/x/net/html/atom
+golang.org/x/net/html/charset
+# golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 golang.org/x/sys/unix
+# golang.org/x/text v0.3.2
+golang.org/x/text/encoding
+golang.org/x/text/encoding/charmap
+golang.org/x/text/encoding/htmlindex
+golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/encoding/japanese
+golang.org/x/text/encoding/korean
+golang.org/x/text/encoding/simplifiedchinese
+golang.org/x/text/encoding/traditionalchinese
+golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/transform

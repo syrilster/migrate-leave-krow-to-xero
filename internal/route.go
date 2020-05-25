@@ -13,8 +13,8 @@ type XeroAPIHandler interface {
 
 func Route(xeroHandler XeroAPIHandler) (route config.Route) {
 	route = config.Route{
-		Path:    "/krowToXero",
-		Method:  http.MethodGet,
+		Path:    "/migrateLeaves",
+		Method:  http.MethodPost,
 		Handler: Handler(xeroHandler),
 	}
 
