@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-const redirectURL = "http://localhost:3000/upload"
+const redirectURL = "http://localhost:8080/upload"
 
 func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

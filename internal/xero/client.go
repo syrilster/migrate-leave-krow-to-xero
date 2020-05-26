@@ -129,7 +129,7 @@ func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpRespons
 
 func (c *client) EmployeeLeaveBalance(ctx context.Context, tenantID string, empID string) (*LeaveBalanceResponse, error) {
 	contextLogger := log.WithContext(ctx)
-	contextLogger.Info("Fetching leave balance for employee: %v", empID)
+	contextLogger.Info("Fetching leave balance for employee: ", empID)
 	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroLeaveBalanceEndpoint(empID), nil)
 	if err != nil {
 		return nil, err

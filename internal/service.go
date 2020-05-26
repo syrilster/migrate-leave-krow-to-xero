@@ -111,11 +111,15 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 	var leaveEndDate string
 	var unpaidLeave float64
 	var leaveUnits float64
+	var unPaidLeaveTypeID string
 
 	ctxLogger := log.WithContext(ctx)
 	ctxLogger.Infof("Calculating leaves to be applied for Employee %v", empName)
 	for _, leaveBal := range leaveBalance.Employee[0].LeaveBalance {
 		leaveBalanceMap[leaveBal.LeaveType] = leaveBal
+		if strings.EqualFold(leaveBal.LeaveType, unPaidLeave) {
+			unPaidLeaveTypeID = leaveBal.LeaveTypeID
+		}
 	}
 
 	for _, leave := range leaveReq {
@@ -177,7 +181,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 
 		unpaidLeaveApplication := xero.LeaveApplicationRequest{
 			EmployeeID:   empID,
-			LeaveTypeID:  leaveTypeID,
+			LeaveTypeID:  unPaidLeaveTypeID,
 			StartDate:    leaveStartDate,
 			EndDate:      leaveEndDate,
 			Title:        unPaidLeave,

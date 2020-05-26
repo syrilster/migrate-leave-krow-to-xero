@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -48,12 +49,16 @@ func (s *Server) WithRoutes(basePath string, routes ...Route) *Server {
 
 //Start the server on the defined port
 func (s *Server) Start(addr string, port int) {
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedHeaders:   []string{"Access-Control-Allow-Origin", "Content-Type", "Origin", "Accept-Encoding", "Accept-Language", "Authorization"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "OPTIONS", "DELETE"},
+		AllowCredentials: true,
+	})
+	handler := c.Handler(s.router)
 	panic(
 		http.ListenAndServe(
 			fmt.Sprintf("%s:%v", addr, port),
-			handlers.RecoveryHandler(
-				handlers.PrintRecoveryStack(true),
-				handlers.RecoveryLogger(log.New()))(s.router),
-		),
+			handlers.RecoveryHandler()(handler)),
 	)
 }
