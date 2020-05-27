@@ -126,14 +126,14 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 		var leavePeriods = make([]xero.LeavePeriod, 1)
 		if lb, ok := leaveBalanceMap[leave.LeaveType]; ok {
 			leaveReqUnit := leave.Hours
-			leaveBalUnit := lb.NumberOfUnits
+			availableLeaveBalUnit := lb.NumberOfUnits
 			leaveTypeID = lb.LeaveTypeID
 			leaveStartDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
 			leaveEndDate = "/Date(" + strconv.FormatInt(leave.LeaveDate, 10) + ")/"
-			if leaveReqUnit >= leaveBalUnit {
-				if leaveBalUnit > 0 {
-					leaveUnits = leaveBalUnit
-					unpaidLeave += leaveReqUnit - leaveBalUnit
+			if leaveReqUnit >= availableLeaveBalUnit {
+				if availableLeaveBalUnit > 0 {
+					leaveUnits = availableLeaveBalUnit
+					unpaidLeave += leaveReqUnit - availableLeaveBalUnit
 				} else {
 					//Employee has negative or zero leave balance and hence unpaid leave
 					leaveUnits = 0

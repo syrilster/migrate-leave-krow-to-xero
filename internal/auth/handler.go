@@ -6,7 +6,8 @@ import (
 	"net/http"
 )
 
-const redirectURL = "http://localhost:8080/upload"
+const successRedirectURL = "http://localhost:8080/upload"
+const errorRedirectURL = "http://localhost:8080/error"
 
 func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -21,12 +22,13 @@ func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *h
 
 		_, err = handler.OAuthService(ctx, code)
 		if err != nil {
+			http.Redirect(w, r, errorRedirectURL, http.StatusSeeOther)
 			contextLogger.WithError(err).Error("Failed to fetch the access token")
 			util.WithBodyAndStatus("Failed to connect to Xero", http.StatusBadRequest, w)
 			return
 		}
 
-		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		http.Redirect(w, r, successRedirectURL, http.StatusSeeOther)
 		return
 	}
 }

@@ -27,9 +27,6 @@ func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http
 			util.WithBodyAndStatus(nil, http.StatusInternalServerError, res)
 			return
 		}
-
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		util.WithBodyAndStatus(resp, http.StatusOK, res)
 	}
 }
