@@ -15,6 +15,7 @@ type envConfig struct {
 	XeroEndpoint     string
 	XeroAuthEndpoint string
 	XeroRedirectURI  string
+	XlsFileLocation  string
 }
 
 func NewEnvironmentConfig() *envConfig {
@@ -28,6 +29,7 @@ func NewEnvironmentConfig() *envConfig {
 		XeroEndpoint:     getEnvString("XERO_ENDPOINT", ""),
 		XeroAuthEndpoint: getEnvString("XERO_AUTH_ENDPOINT", ""),
 		XeroRedirectURI:  getEnvString("XERO_REDIRECT_URI", ""),
+		XlsFileLocation:  getEnvString("XLS_FILE_LOCATION", ""),
 	}
 }
 

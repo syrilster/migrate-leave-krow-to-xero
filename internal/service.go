@@ -17,15 +17,16 @@ const eliiza = "Eliiza"
 const kasna = "Kasna"
 const mantel = "Mantel Group"
 const unPaidLeave = "Other Unpaid Leave"
-const xlsFileLocation = "/Users/syril/sample.xlsx"
 
 type Service struct {
-	client xero.ClientInterface
+	client          xero.ClientInterface
+	xlsFileLocation string
 }
 
-func NewService(c xero.ClientInterface) *Service {
+func NewService(c xero.ClientInterface, xlsLocation string) *Service {
 	return &Service{
-		client: c,
+		client:          c,
+		xlsFileLocation: xlsLocation,
 	}
 }
 
@@ -208,7 +209,7 @@ func (service Service) extractDataFromKrow(ctx context.Context, ch chan map[stri
 	var kasnaLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	var mantelLeaveReq = make(map[string][]model.KrowLeaveRequest)
 	ctxLogger := log.WithContext(ctx)
-	f, err := excelize.OpenFile(xlsFileLocation)
+	f, err := excelize.OpenFile(service.xlsFileLocation)
 	if err != nil {
 		ctxLogger.WithError(err).Error("unable to open the xls file provided")
 		ch <- leaveRequests

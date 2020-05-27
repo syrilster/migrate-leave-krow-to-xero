@@ -27,11 +27,12 @@ type ServerConfig interface {
 	XeroSecret() string
 	XeroAuthEndpoint() string
 	XeroRedirectURI() string
+	XlsFileLocation() string
 }
 
 func SetupServer(cfg ServerConfig) *config.Server {
 	basePath := fmt.Sprintf("/%v", cfg.Version())
-	service := NewService(cfg.XeroEndpoint())
+	service := NewService(cfg.XeroEndpoint(), cfg.XlsFileLocation())
 	authService := auth.NewAuthService(cfg.XeroKey(), cfg.XeroSecret(), cfg.XeroAuthEndpoint(), cfg.XeroRedirectURI())
 	server := config.NewServer().
 		WithRoutes(

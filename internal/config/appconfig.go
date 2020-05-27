@@ -54,6 +54,11 @@ func (cfg *ApplicationConfig) XeroRedirectURI() string {
 	return cfg.envValues.XeroRedirectURI
 }
 
+//XlsFileLocation returns the file location to read the leave requests
+func (cfg *ApplicationConfig) XlsFileLocation() string {
+	return cfg.envValues.XlsFileLocation
+}
+
 //NewApplicationConfig loads config values from environment and initialises config
 func NewApplicationConfig() *ApplicationConfig {
 	envValues := NewEnvironmentConfig()
