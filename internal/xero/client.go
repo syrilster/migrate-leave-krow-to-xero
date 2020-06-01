@@ -14,7 +14,7 @@ import (
 
 type ClientInterface interface {
 	GetEmployees(ctx context.Context, tenantID string) (*EmpResponse, error)
-	GetConnections(ctx context.Context) (*ConnectionResp, error)
+	GetConnections(ctx context.Context) ([]Connection, error)
 	EmployeeLeaveBalance(ctx context.Context, tenantID string, empID string) (*LeaveBalanceResponse, error)
 	EmployeeLeaveApplication(ctx context.Context, tenantID string, request LeaveApplicationRequest) error
 	GetPayrollCalendars(ctx context.Context, tenantID string) (*PayrollCalendarResponse, error)
@@ -32,7 +32,7 @@ type client struct {
 	HTTPCommand customhttp.HTTPCommand
 }
 
-func (c *client) GetConnections(ctx context.Context) (*ConnectionResp, error) {
+func (c *client) GetConnections(ctx context.Context) ([]Connection, error) {
 	contextLogger := log.WithContext(ctx)
 
 	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroConnectionsEndpoint(), nil)
@@ -70,8 +70,8 @@ func (c *client) GetConnections(ctx context.Context) (*ConnectionResp, error) {
 		return nil, err
 	}
 
-	response := &ConnectionResp{}
-	if err := json.Unmarshal(body, response); err != nil {
+	var response []Connection
+	if err := json.Unmarshal(body, &response); err != nil {
 		contextLogger.WithError(err).Errorf("there was an error un marshalling the xero API resp. %v", err)
 		return nil, err
 	}

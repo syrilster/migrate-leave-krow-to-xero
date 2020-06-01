@@ -2,32 +2,35 @@ package internal
 
 import (
 	"bytes"
+	"io"
+	"net/http"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/util"
 	"github.com/tealeg/xlsx"
-	"io"
-	"net/http"
 )
 
-const XlsOutputPath = "/Users/syril/sample.xlsx"
+const xlsOutputPath = "/Users/syril/sample.xlsx"
 
+//Handler func
 func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		contextLogger := log.WithContext(ctx)
 
+		var errResult []string
 		err := parseRequestBody(req)
 		if err != nil {
 			util.WithBodyAndStatus(nil, http.StatusInternalServerError, res)
 			return
 		}
-		resp, err := xeroHandler.MigrateLeaveKrowToXero(ctx)
-		if err != nil {
-			contextLogger.WithError(err).Error("Failed to fetch details from Xero")
+		errResult = xeroHandler.MigrateLeaveKrowToXero(ctx)
+		if len(errResult) > 0 {
+			contextLogger.Error("There were some errors during processing leaves")
 			util.WithBodyAndStatus(nil, http.StatusInternalServerError, res)
 			return
 		}
-		util.WithBodyAndStatus(resp, http.StatusOK, res)
+		util.WithBodyAndStatus("", http.StatusOK, res)
 	}
 }
 
@@ -58,7 +61,7 @@ func parseRequestBody(req *http.Request) error {
 		contextLogger.WithError(err).Error("Failed to convert bytes to excel file")
 		return err
 	}
-	err = excelFile.Save(XlsOutputPath)
+	err = excelFile.Save(xlsOutputPath)
 	if err != nil {
 		contextLogger.WithError(err).Error("Failed to save excel file to disk")
 		return err

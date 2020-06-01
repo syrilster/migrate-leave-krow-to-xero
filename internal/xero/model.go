@@ -4,7 +4,9 @@ type EmpResponse struct {
 	Status    string     `json:"Status"`
 	Employees []Employee `json:"Employees"`
 }
-type ConnectionResp []Connection
+type ConnectionResp struct {
+	Connections []Connection
+}
 
 type Employee struct {
 	EmployeeID        string         `json:"EmployeeID"`
@@ -22,7 +24,7 @@ type Connection struct {
 }
 
 type LeaveBalanceResponse struct {
-	Employee []Employee `json:"Employees"`
+	Employees []Employee `json:"Employees"`
 }
 
 type LeaveBalance struct {

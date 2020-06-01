@@ -3,12 +3,11 @@ package internal
 import (
 	"context"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/config"
-	"github.com/syrilster/migrate-leave-krow-to-xero/internal/model"
 	"net/http"
 )
 
 type XeroAPIHandler interface {
-	MigrateLeaveKrowToXero(ctx context.Context) (model.XeroEmployees, error)
+	MigrateLeaveKrowToXero(ctx context.Context) []string
 }
 
 func Route(xeroHandler XeroAPIHandler) (route config.Route) {
