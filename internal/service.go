@@ -94,7 +94,7 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 			errStr := fmt.Errorf("failed to fetch employees from Xero. OrgName: %v ", orgName)
 			ctxLogger.Infof(err.Error(), err)
 			errResult = append(errResult, errStr.Error())
-			return errResult
+			continue
 		}
 
 		//populate the employees to a map
@@ -156,7 +156,7 @@ func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmploye
 	empID := xeroEmployeesMap[empName].EmployeeID
 	payCalendarID := xeroEmployeesMap[empName].PayrollCalendarID
 	if _, ok := payrollCalendarMap[payCalendarID]; !ok {
-		errStr := fmt.Errorf("Failed to fetch employee payroll calendar settings from Xero. Employee %v ", empName)
+		errStr := fmt.Errorf("Failed to fetch employee payroll calendar settings from Xero. Employee: %v ", empName)
 		ctxLogger.Infof(errStr.Error())
 		return errStr
 	}
