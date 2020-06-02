@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"github.com/syrilster/migrate-leave-krow-to-xero/internal/config"
 	"io"
 	"net/http"
 
@@ -9,8 +10,6 @@ import (
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/util"
 	"github.com/tealeg/xlsx"
 )
-
-const xlsOutputPath = "/Users/syril/sample.xlsx"
 
 //Handler func
 func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http.Request) {
@@ -36,6 +35,7 @@ func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http
 
 func parseRequestBody(req *http.Request) error {
 	ctx := req.Context()
+	envValues := config.NewEnvironmentConfig()
 	contextLogger := log.WithContext(ctx)
 	err := req.ParseMultipartForm(32 << 20)
 	if err != nil {
@@ -61,7 +61,7 @@ func parseRequestBody(req *http.Request) error {
 		contextLogger.WithError(err).Error("Failed to convert bytes to excel file")
 		return err
 	}
-	err = excelFile.Save(xlsOutputPath)
+	err = excelFile.Save(envValues.XlsFileLocation)
 	if err != nil {
 		contextLogger.WithError(err).Error("Failed to save excel file to disk")
 		return err
