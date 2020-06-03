@@ -18,6 +18,7 @@ type envConfig struct {
 	XlsFileLocation        string
 	AuthSuccessRedirectURL string
 	AuthErrorRedirectURL   string
+	EmailTo                string
 }
 
 func NewEnvironmentConfig() *envConfig {
@@ -34,6 +35,7 @@ func NewEnvironmentConfig() *envConfig {
 		XlsFileLocation:        getEnvString("XLS_FILE_LOCATION", ""),
 		AuthSuccessRedirectURL: getEnvString("AUTH_SUCCESS_REDIRECT_URL", ""),
 		AuthErrorRedirectURL:   getEnvString("AUTH_ERROR_REDIRECT_URL", ""),
+		EmailTo:                getEnvString("EMAIL_TO", ""),
 	}
 }
 

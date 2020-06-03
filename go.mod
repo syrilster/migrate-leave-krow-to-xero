@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.2.0
+	github.com/aws/aws-sdk-go v1.31.9
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/joho/godotenv v1.3.0

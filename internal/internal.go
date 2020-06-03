@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/auth"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/config"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/middlewares"
@@ -28,11 +29,13 @@ type ServerConfig interface {
 	XeroAuthEndpoint() string
 	XeroRedirectURI() string
 	XlsFileLocation() string
+	EmailClient() *ses.SES
+	EmailTo() string
 }
 
 func SetupServer(cfg ServerConfig) *config.Server {
 	basePath := fmt.Sprintf("/%v", cfg.Version())
-	service := NewService(cfg.XeroEndpoint(), cfg.XlsFileLocation())
+	service := NewService(cfg.XeroEndpoint(), cfg.XlsFileLocation(), cfg.EmailClient(), cfg.EmailTo())
 	authService := auth.NewAuthService(cfg.XeroKey(), cfg.XeroSecret(), cfg.XeroAuthEndpoint(), cfg.XeroRedirectURI())
 	server := config.NewServer().
 		WithRoutes(

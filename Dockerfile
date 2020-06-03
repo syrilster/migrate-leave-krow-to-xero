@@ -33,8 +33,8 @@ RUN apk --no-cache add ca-certificates
 # Copy the Pre-built binary file from the previous stage
 COPY --from=base /app/main .
 
-# Expose port 8080 to the outside world
-EXPOSE 8080
+# Expose port 8000 to the outside world
+EXPOSE 8000
 
 # Command to run
 ENTRYPOINT ["./main"]

@@ -1,6 +1,9 @@
 package config
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/xero"
 	"net/http"
 	_ "os"
@@ -10,8 +13,9 @@ import (
 )
 
 type ApplicationConfig struct {
-	envValues  *envConfig
-	xeroClient xero.ClientInterface
+	envValues   *envConfig
+	xeroClient  xero.ClientInterface
+	emailClient *ses.SES
 }
 
 //Version returns application version
@@ -59,14 +63,26 @@ func (cfg *ApplicationConfig) XlsFileLocation() string {
 	return cfg.envValues.XlsFileLocation
 }
 
+//EmailClient returns the ses client with config
+func (cfg *ApplicationConfig) EmailClient() *ses.SES {
+	return cfg.emailClient
+}
+
+//EmailTo returns the to email address
+func (cfg *ApplicationConfig) EmailTo() string {
+	return cfg.envValues.EmailTo
+}
+
 //NewApplicationConfig loads config values from environment and initialises config
 func NewApplicationConfig() *ApplicationConfig {
 	envValues := NewEnvironmentConfig()
 	httpCommand := NewHTTPCommand()
 	xeroClient := xero.NewClient(envValues.XeroEndpoint, httpCommand)
+	emailClient := ses.New(session.New(), aws.NewConfig().WithRegion("ap-southeast-2"))
 	return &ApplicationConfig{
-		envValues:  envValues,
-		xeroClient: xeroClient,
+		envValues:   envValues,
+		xeroClient:  xeroClient,
+		emailClient: emailClient,
 	}
 }
 

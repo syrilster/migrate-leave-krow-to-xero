@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,6 +27,8 @@ const unPaidLeave = "Other Unpaid Leave"
 type Service struct {
 	client          xero.ClientInterface
 	xlsFileLocation string
+	emailClient     *ses.SES
+	emailTo         string
 }
 
 type EmpLeaveRequest struct {
@@ -39,10 +43,12 @@ type EmpLeaveRequest struct {
 	leaveType      string
 }
 
-func NewService(c xero.ClientInterface, xlsLocation string) *Service {
+func NewService(c xero.ClientInterface, xlsLocation string, ec *ses.SES, emailTo string) *Service {
 	return &Service{
 		client:          c,
 		xlsFileLocation: xlsLocation,
+		emailClient:     ec,
+		emailTo:         emailTo,
 	}
 }
 
@@ -138,6 +144,8 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 		}
 	}
 	if len(errResult) > 0 {
+		errorsString := strings.Join(errResult, "\n")
+		go service.sesSendEmail(ctx, errorsString)
 		return errResult
 	}
 	return nil
@@ -369,4 +377,31 @@ func (service Service) extractDataFromKrow(ctx context.Context) (map[string]map[
 	leaveRequests[mantel] = mantelLeaveReq
 
 	return leaveRequests, nil
+}
+
+func (service Service) sesSendEmail(ctx context.Context, errorString string) {
+	contextLogger := log.WithContext(ctx)
+	emailParams := &ses.SendEmailInput{
+		Message: &ses.Message{
+			Subject: &ses.Content{
+				Data: aws.String("Leave migration to Xero error report"),
+			},
+			Body: &ses.Body{
+				Text: &ses.Content{
+					Data: aws.String(errorString),
+				},
+			},
+		},
+		Destination: &ses.Destination{
+			ToAddresses: []*string{aws.String(service.emailTo)},
+		},
+		Source: aws.String(service.emailTo),
+	}
+
+	_, err := service.emailClient.SendEmail(emailParams)
+	if err != nil {
+		contextLogger.WithError(err).Error("error when sending email")
+		return
+	}
+	return
 }
