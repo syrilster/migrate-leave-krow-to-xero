@@ -6,20 +6,19 @@ services:
       context: ./frontend
       args:
         app_env: production
-    restart: always
+    #restart: always
     volumes:
-      - '.:/app'
-      - '/app/node_modules'
+      - ./frontend/src:/frontend/src
     ports:
       - 8080:8080
   api:
-    container_name: leave-migration-api
-    build:
-      context: .
-    restart: always
-    env_file:
-      - .env
-    ports:
-      - 8000:8000
-    volumes:
-      - '.:/app'
+     container_name: leave-migration-api
+     build:
+       context: .
+     restart: always
+     env_file:
+       - .env
+     ports:
+       - 8000:8000
+     volumes:
+       - '.:/app'
