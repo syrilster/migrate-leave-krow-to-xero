@@ -24,9 +24,9 @@ CMD if [ ${NODE_ENV} = production ]; \
 	then \
 	npm install -g serve && \
 	npm run build && \
-	serve -s build -l 8080; \
+	serve -s build -l 3000; \
 	else \
 	npm run start; \
 	fi
 
-EXPOSE 8080
+EXPOSE 3000

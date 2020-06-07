@@ -21,6 +21,7 @@ func OauthRedirectHandler(handler OAuthHandler) func(w http.ResponseWriter, r *h
 		}
 
 		code := r.FormValue("code")
+		contextLogger.Infof("Auth code from xero: %v", code)
 		_, err = handler.OAuthService(ctx, code)
 		if err != nil {
 			http.Redirect(w, r, envValues.AuthErrorRedirectURL, http.StatusSeeOther)

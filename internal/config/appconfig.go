@@ -73,11 +73,16 @@ func (cfg *ApplicationConfig) EmailTo() string {
 	return cfg.envValues.EmailTo
 }
 
+//AuthTokenFileLocation returns the temp loc to store auth file
+func (cfg *ApplicationConfig) AuthTokenFileLocation() string {
+	return cfg.envValues.AuthTokenFileLocation
+}
+
 //NewApplicationConfig loads config values from environment and initialises config
 func NewApplicationConfig() *ApplicationConfig {
 	envValues := NewEnvironmentConfig()
 	httpCommand := NewHTTPCommand()
-	xeroClient := xero.NewClient(envValues.XeroEndpoint, httpCommand)
+	xeroClient := xero.NewClient(envValues.XeroEndpoint, httpCommand, envValues.AuthTokenFileLocation)
 	emailClient := ses.New(session.New(), aws.NewConfig().WithRegion("ap-southeast-2"))
 	return &ApplicationConfig{
 		envValues:   envValues,

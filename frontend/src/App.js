@@ -14,6 +14,11 @@ class App extends Component {
           <Route exact path="/">
             <Connect />
           </Route>
+          <Route exact path="/status">
+            <div>
+              <h1>Success</h1>
+            </div>
+          </Route>
           <Route exact path="/upload">
             <Upload />
           </Route>

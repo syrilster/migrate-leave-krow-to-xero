@@ -20,16 +20,18 @@ type ClientInterface interface {
 	GetPayrollCalendars(ctx context.Context, tenantID string) (*PayrollCalendarResponse, error)
 }
 
-func NewClient(endpoint string, c customhttp.HTTPCommand) *client {
+func NewClient(endpoint string, c customhttp.HTTPCommand, authTokenLoc string) *client {
 	return &client{
-		URL:         endpoint,
-		HTTPCommand: c,
+		URL:               endpoint,
+		HTTPCommand:       c,
+		AuthTokenLocation: authTokenLoc,
 	}
 }
 
 type client struct {
-	URL         string
-	HTTPCommand customhttp.HTTPCommand
+	URL               string
+	HTTPCommand       customhttp.HTTPCommand
+	AuthTokenLocation string
 }
 
 func (c *client) GetConnections(ctx context.Context) ([]Connection, error) {
@@ -40,7 +42,7 @@ func (c *client) GetConnections(ctx context.Context) ([]Connection, error) {
 		return nil, err
 	}
 
-	accessToken, err := getAccessToken(ctx)
+	accessToken, err := c.getAccessToken(ctx)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("Error fetching the access token")
 		return nil, err
@@ -87,7 +89,7 @@ func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpRespons
 		return nil, err
 	}
 
-	accessToken, err := getAccessToken(ctx)
+	accessToken, err := c.getAccessToken(ctx)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("Error fetching the access token")
 		return nil, err
@@ -135,7 +137,7 @@ func (c *client) EmployeeLeaveBalance(ctx context.Context, tenantID string, empI
 		return nil, err
 	}
 
-	accessToken, err := getAccessToken(ctx)
+	accessToken, err := c.getAccessToken(ctx)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("Error fetching the access token")
 		return nil, err
@@ -188,7 +190,7 @@ func (c *client) EmployeeLeaveApplication(ctx context.Context, tenantID string, 
 		return err
 	}
 
-	accessToken, err := getAccessToken(ctx)
+	accessToken, err := c.getAccessToken(ctx)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("Error fetching the access token")
 		return err
@@ -226,7 +228,7 @@ func (c *client) GetPayrollCalendars(ctx context.Context, tenantID string) (*Pay
 		return nil, err
 	}
 
-	accessToken, err := getAccessToken(ctx)
+	accessToken, err := c.getAccessToken(ctx)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("Error fetching the access token")
 		return nil, err
@@ -286,10 +288,10 @@ func (c *client) buildXeroPayrollCalendarEndpoint() string {
 	return c.URL + "/payroll.xro/1.0/PayrollCalendars"
 }
 
-func getAccessToken(ctx context.Context) (string, error) {
+func (c *client) getAccessToken(ctx context.Context) (string, error) {
 	var data *model.XeroResponse
 	contextLogger := log.WithContext(ctx)
-	sessionFile, err := ioutil.ReadFile("xero_session.json")
+	sessionFile, err := ioutil.ReadFile(c.AuthTokenLocation)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("error reading json file containing access token")
 		return "", err

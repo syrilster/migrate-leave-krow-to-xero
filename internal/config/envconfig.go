@@ -19,6 +19,7 @@ type envConfig struct {
 	AuthSuccessRedirectURL string
 	AuthErrorRedirectURL   string
 	EmailTo                string
+	AuthTokenFileLocation  string
 }
 
 func NewEnvironmentConfig() *envConfig {
@@ -33,6 +34,7 @@ func NewEnvironmentConfig() *envConfig {
 		XeroAuthEndpoint:       getEnvString("XERO_AUTH_ENDPOINT", ""),
 		XeroRedirectURI:        getEnvString("XERO_REDIRECT_URI", ""),
 		XlsFileLocation:        getEnvString("XLS_FILE_LOCATION", ""),
+		AuthTokenFileLocation:  getEnvString("AUTH_TOKEN_FILE_LOCATION", ""),
 		AuthSuccessRedirectURL: getEnvString("AUTH_SUCCESS_REDIRECT_URL", ""),
 		AuthErrorRedirectURL:   getEnvString("AUTH_ERROR_REDIRECT_URL", ""),
 		EmailTo:                getEnvString("EMAIL_TO", ""),
