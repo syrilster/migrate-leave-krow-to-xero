@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { loadProgressBar } from 'axios-progress-bar'
 
 
-const url = 'https://migrate-leaves-to-xero.sandbox.digio.com.au:8000/v1/migrateLeaves';
+const url = process.env.REACT_APP_API_ENDPOINT;
 
 class Upload extends Component {
 

@@ -68,16 +68,19 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 	leaveRequests, err := service.extractDataFromKrow(ctx)
 	if err != nil {
 		errResult = append(errResult, err.Error())
+		service.sendErrorReport(ctx, errResult)
 		return errResult
 	}
 
 	resp, err := service.client.GetConnections(ctx)
 	if err != nil {
-		errStr := fmt.Errorf("failed to fetch connections from Xero: %v", err)
+		errStr := fmt.Errorf("Failed to fetch connections from Xero: %v ", err)
 		ctxLogger.Infof(errStr.Error())
 		errResult = append(errResult, errStr.Error())
+		service.sendErrorReport(ctx, errResult)
 		return errResult
 	}
+
 	for _, c := range resp {
 		connectionsMap[c.OrgName] = c.TenantID
 	}
@@ -97,7 +100,7 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 		tenantID := connectionsMap[orgName]
 		empResponse, err := service.client.GetEmployees(ctx, tenantID)
 		if err != nil {
-			errStr := fmt.Errorf("failed to fetch employees from Xero. OrgName: %v ", orgName)
+			errStr := fmt.Errorf("Failed to fetch employees from Xero. OrgName: %v ", orgName)
 			ctxLogger.Infof(err.Error(), err)
 			errResult = append(errResult, errStr.Error())
 			continue
@@ -110,7 +113,7 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 
 		payCalendarResp, err := service.client.GetPayrollCalendars(ctx, tenantID)
 		if err != nil {
-			errStr := fmt.Errorf("failed to fetch employee payroll calendar settings from Xero.OrgName: %v ", orgName)
+			errStr := fmt.Errorf("Failed to fetch employee payroll calendar settings from Xero. OrgName: %v ", orgName)
 			ctxLogger.Infof(err.Error(), err)
 			errStrings = append(errStrings, errStr)
 			continue
@@ -144,11 +147,15 @@ func (service Service) MigrateLeaveKrowToXero(ctx context.Context) []string {
 		}
 	}
 	if len(errResult) > 0 {
-		errorsString := strings.Join(errResult, "\n")
-		go service.sesSendEmail(ctx, errorsString)
+		service.sendErrorReport(ctx, errResult)
 		return errResult
 	}
 	return nil
+}
+
+func (service Service) sendErrorReport(ctx context.Context, errResult []string) {
+	errorsString := strings.Join(errResult, "\n")
+	go service.sesSendEmail(ctx, errorsString)
 }
 
 func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmployeesMap map[string]xero.Employee,
@@ -157,21 +164,21 @@ func (service Service) processLeaveRequestByEmp(ctx context.Context, xeroEmploye
 	ctxLogger := log.WithContext(ctx)
 
 	if _, ok := xeroEmployeesMap[empName]; !ok {
-		errStr := fmt.Errorf("employee not found in Xero: %v", empName)
+		errStr := fmt.Errorf("Employee not found in Xero. Employee Name: %v ", empName)
 		ctxLogger.Infof(errStr.Error())
 		return errStr
 	}
 	empID := xeroEmployeesMap[empName].EmployeeID
 	payCalendarID := xeroEmployeesMap[empName].PayrollCalendarID
 	if _, ok := payrollCalendarMap[payCalendarID]; !ok {
-		errStr := fmt.Errorf("Failed to fetch employee payroll calendar settings from Xero. Employee: %v ", empName)
+		errStr := fmt.Errorf("Failed to fetch employee payroll calendar settings from Xero. Employee Name: %v ", empName)
 		ctxLogger.Infof(errStr.Error())
 		return errStr
 	}
 	paymentDate := payrollCalendarMap[payCalendarID]
 	leaveBalance, err := service.client.EmployeeLeaveBalance(ctx, tenantID, empID)
 	if err != nil {
-		errStr := fmt.Errorf("failed to fetch employee leave balance from Xero. Emp Name %v", empName)
+		errStr := fmt.Errorf("Failed to fetch employee leave balance from Xero. Emp Name: %v ", empName)
 		ctxLogger.Infof(errStr.Error(), err)
 		return errStr
 	}
@@ -202,7 +209,7 @@ func (service Service) reconcileLeaveRequestAndApply(ctx context.Context, empID 
 
 	for _, leave := range leaveReq {
 		if _, ok := leaveBalanceMap[leave.LeaveType]; !ok {
-			errStr := fmt.Errorf("leave type %v not found in Xero for Employee: %v", leave.LeaveType, empName)
+			errStr := fmt.Errorf("Leave type %v not found/configured in Xero for Employee Name: %v ", leave.LeaveType, empName)
 			ctxLogger.Infof(errStr.Error())
 			errorsStr = append(errorsStr, errStr.Error())
 			continue
@@ -297,8 +304,8 @@ func (service Service) applyLeaveRequestToXero(ctx context.Context, tenantID str
 	err := service.client.EmployeeLeaveApplication(ctx, tenantID, leaveApplication)
 	if err != nil {
 		ctxLogger.Infof("Leave Application Request: %v", leaveApplication)
-		ctxLogger.WithError(err).Errorf("Failed to post Leave application to xero for employee %v", empName)
-		errCh <- fmt.Errorf("failed to post Leave application to xero for employee %v. Check if Unpaid Leave is configured", empName)
+		ctxLogger.WithError(err).Errorf("Failed to post Leave application to xero for employee: %v ", empName)
+		errCh <- fmt.Errorf("Failed to post Leave application to xero for employee %v. Check if entered leave type/unpaid leave is configured. ", empName)
 	}
 	errCh <- nil
 }
@@ -314,7 +321,7 @@ func (service Service) extractDataFromKrow(ctx context.Context) (map[string]map[
 
 	f, err := excelize.OpenFile(service.xlsFileLocation)
 	if err != nil {
-		errStr := fmt.Errorf("unable to open the xls file provided")
+		errStr := fmt.Errorf("Unable to open the uploaded file. Please confirm the file is in xlsx format. ")
 		ctxLogger.WithError(err).Error(errStr)
 		return nil, errStr
 	}
@@ -326,13 +333,13 @@ func (service Service) extractDataFromKrow(ctx context.Context) (map[string]map[
 		}
 		leaveDate, err := time.Parse("2/1/2006", row[1])
 		if err != nil {
-			errStr := fmt.Errorf("error while parsing leave date for entry: %v", row[1])
+			errStr := fmt.Errorf("Error while parsing leave date for entry: %v ", row[1])
 			ctxLogger.WithError(err).Error(errStr)
 			return nil, errStr
 		}
 		hours, err := strconv.ParseFloat(row[2], 64)
 		if err != nil {
-			errStr := fmt.Errorf("error while parsing leave hours for entry: %v", row[2])
+			errStr := fmt.Errorf("Error while parsing leave hours for entry: %v ", row[2])
 			ctxLogger.WithError(err).Error(errStr)
 			return nil, errStr
 		}
@@ -381,6 +388,7 @@ func (service Service) extractDataFromKrow(ctx context.Context) (map[string]map[
 
 func (service Service) sesSendEmail(ctx context.Context, errorString string) {
 	contextLogger := log.WithContext(ctx)
+	contextLogger.Infof("Inside sesSendEmail func..")
 	emailParams := &ses.SendEmailInput{
 		Message: &ses.Message{
 			Subject: &ses.Content{

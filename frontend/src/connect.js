@@ -1,11 +1,11 @@
 import React, { Component } from "react";
 import "./App.css";
 
-const xeroAuthURL = process.env.REACT_APP_XERO_AUTH_URL
-const clientID = "EB0E514535E344B1B4C6C62429FD89B9"
-const xeroRedirectURI = process.env.REACT_APP_XERO_REDIRECT_URI
-const scopes = "offline_access openid payroll.employees payroll.settings"
-const randNumber = "116780"
+const xeroAuthURL = process.env.REACT_APP_XERO_AUTH_URL;
+const clientID = process.env.REACT_APP_XERO_CLIENT_ID;
+const xeroRedirectURI = process.env.REACT_APP_XERO_REDIRECT_URI;
+const scopes = process.env.REACT_APP_XERO_SCOPES;
+const randNumber = "116780";
 
 class Connect extends Component {
 

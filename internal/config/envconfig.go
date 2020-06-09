@@ -28,7 +28,7 @@ func NewEnvironmentConfig() *envConfig {
 		ServerPort:             getEnvInt("SERVER_PORT", 0),
 		Version:                getEnvString("VERSION", ""),
 		BaseUrl:                "",
-		XeroKey:                getEnvString("XERO_KEY", ""),
+		XeroKey:                getEnvString("XERO_CLIENT_ID", ""),
 		XeroSecret:             getEnvString("XERO_SECRET", ""),
 		XeroEndpoint:           getEnvString("XERO_ENDPOINT", ""),
 		XeroAuthEndpoint:       getEnvString("XERO_AUTH_ENDPOINT", ""),
