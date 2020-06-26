@@ -62,13 +62,13 @@ func (c *client) GetConnections(ctx context.Context) ([]Connection, error) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		contextLogger.Infof("status returned from xero service %s", resp.Status)
-		return nil, fmt.Errorf("xero service returned status: %s", resp.Status)
+		contextLogger.Infof("status returned from xero service %s ", resp.Status)
+		return nil, fmt.Errorf("xero service (GetConnections) returned status: %s ", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", err)
+		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", body)
 		return nil, err
 	}
 
@@ -110,13 +110,13 @@ func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpRespons
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		contextLogger.Infof("status returned from xero service %s", resp.Status)
-		return nil, fmt.Errorf("xero service returned status: %s", resp.Status)
+		contextLogger.Infof("status returned from xero service %s ", resp.Status)
+		return nil, fmt.Errorf("xero service (GetEmployees) returned status: %s ", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", err)
+		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", body)
 		return nil, err
 	}
 
@@ -158,13 +158,13 @@ func (c *client) EmployeeLeaveBalance(ctx context.Context, tenantID string, empI
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		contextLogger.Infof("status returned from xero service %s", resp.Status)
-		return nil, fmt.Errorf("xero service returned status: %s", resp.Status)
+		contextLogger.Infof("status returned from xero service %s ", resp.Status)
+		return nil, fmt.Errorf("xero service (EmployeeLeaveBalance) returned status: %s ", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", err)
+		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", body)
 		return nil, err
 	}
 
@@ -213,8 +213,8 @@ func (c *client) EmployeeLeaveApplication(ctx context.Context, tenantID string, 
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		contextLogger.Infof("status returned from xero service %s", resp.Status)
-		return fmt.Errorf("xero service returned status: %s", resp.Status)
+		contextLogger.Infof("status returned from xero service %s ", resp.Status)
+		return fmt.Errorf("xero service (EmployeeLeaveApplication) returned status: %s ", resp.Status)
 	}
 
 	return nil
@@ -249,13 +249,13 @@ func (c *client) GetPayrollCalendars(ctx context.Context, tenantID string) (*Pay
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		contextLogger.Infof("status returned from xero service %s", resp.Status)
-		return nil, fmt.Errorf("xero service returned status: %s", resp.Status)
+		contextLogger.Infof("status returned from xero service %s ", resp.Status)
+		return nil, fmt.Errorf("xero service (GetPayrollCalendars) returned status: %s ", resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", err)
+		contextLogger.WithError(err).Errorf("error reading xero API data resp body (%s)", body)
 		return nil, err
 	}
 

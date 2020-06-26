@@ -1,10 +1,10 @@
 import React, { Component } from "react";
-import "./App.css";
-import Connect from "./connect";
+import Connect from "./connect"
 import { Route } from "react-router";
 import Upload from "./upload";
 import ErrorPage from "./error";
 import { BrowserRouter } from "react-router-dom";
+import "../App.css";
 
 class App extends Component {
   render() {

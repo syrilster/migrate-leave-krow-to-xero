@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import "./App.css";
+import "../App.css";
 
 const xeroAuthURL = process.env.REACT_APP_XERO_AUTH_URL;
 const clientID = process.env.REACT_APP_XERO_CLIENT_ID;

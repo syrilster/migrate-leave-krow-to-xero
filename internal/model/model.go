@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type XeroResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -22,8 +24,10 @@ type Employee struct {
 }
 
 type KrowLeaveRequest struct {
-	LeaveDate int64
-	Hours     float64
-	LeaveType string
-	OrgName   string
+	LeaveDate      time.Time
+	LeaveDateEpoch int64
+	Hours          float64
+	LeaveType      string
+	OrgName        string
+	EmpName        string
 }

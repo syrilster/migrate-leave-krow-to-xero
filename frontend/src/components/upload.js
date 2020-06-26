@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import './App.css';
+import '../App.css';
 import axios from 'axios'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -44,11 +44,11 @@ class Upload extends Component {
       .post(url, formData, config)
       .then(res => {
         console.log("Status: ", res.status);
-        toast.success("Leaves Processed Successfully :)");
+        toast.success("Leaves Processed Successfully");
       })
       .catch(err => {
         console.log("Error: ", err.message);
-        toast.error("There was a server error!!");
+        toast.error("There were some errors. A error report has been emailed");
       });
   };
 
@@ -59,7 +59,7 @@ class Upload extends Component {
         <div class="row">
           <div class="offset-md-3 col-md-6">
                <div class="form-group files">
-                <label>Upload Leave Extract From Krow </label>
+                <label>Upload Leave Extract in .xlsx Format </label>
                 <input type="file" class="form-control" onChange={this.onChangeHandler}/>
               </div>  
               <div class="form-group">

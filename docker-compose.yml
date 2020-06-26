@@ -6,15 +6,20 @@ services:
       context: ./frontend
       args:
         app_env: production
-    #restart: always
+    image: digio/migrate-leave-to-xero-web:latest
+    restart: always
+    env_file:
+      - .env
     volumes:
-      - ./frontend/src:/frontend/src
+      - './frontend/src:/frontend/src'
+      - '/tmp:/tmp'
     ports:
       - 3000:3000
   api:
      container_name: leave-migration-api
      build:
        context: .
+     image: digio/migrate-leave-to-xero-api:latest
      restart: always
      env_file:
        - .env
@@ -22,3 +27,4 @@ services:
        - 8000:8000
      volumes:
        - '.:/app'
+       - '/tmp:/tmp'
