@@ -60,8 +60,3 @@ Confluence page [here](https://mantelgroup.atlassian.net/wiki/spaces/DIG/pages/8
 * A Route53 record set (LB as Alias target) has been added to leaverage the existing hosted zone sandbox.digio.com.au.
 
 ![Leave Migration Tech Flow](source/images/Leave Migration Flow.png)
-
-# Deploy to Prod
-* This app is running in DigIO sandbox AWS account. To deploy a new version of the app, commit changes and unblock the deploy
-step in CI pipeline.
-* Gitlab runner config details [here](https://mantelgroup.atlassian.net/wiki/spaces/OP/pages/629243910/GitLab+CI+Setup)
