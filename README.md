@@ -48,3 +48,20 @@ Confluence page [here](https://mantelgroup.atlassian.net/wiki/spaces/DIG/pages/8
 - [Xero API Doc](https://developer.xero.com/documentation/payroll-api/overview)
 
 ![alt text](https://developer.xero.com/static/images/documentation/authflow.svg)
+
+# Implementation Details
+* App URL is http://migrate-leaves-to-xero.sandbox.digio.com.au/
+* This app is running in DigIO sandbox AWS account. Both the react frontend and the go backend is running as docker containers in the same EC2 instance.
+* The connect to Xero button on the landing page redirects a user to the Xero login page. After successful Auth, the Auth token JSON (Valid for 30 mins) is written to the disk. The location can be changed in the .env file property AUTH_TOKEN_FILE_LOCATION.
+* A React Frontend (File Upload UI) is used to upload the leave extract in .xlsx format from Krow.
+* A Go Backend is used to process the leaves and apply leave in Xero.
+* Error and Audit reporting is sent to operations team email address. The from and to email can be configured in .env file. (Please add and verify the email address in AWS SES Dashboard)
+* Xero Auth process needs a HTTPS endpoint for the redirect URL and hence a AWS LB (Application Type) is used to route the HTTPS traffic to the Go backend running on HTTP.
+* A Route53 record set (LB as Alias target) has been added to leaverage the existing hosted zone sandbox.digio.com.au.
+
+![Leave Migration Tech Flow](source/images/Leave Migration Flow.png)
+
+# Deploy to Prod
+* This app is running in DigIO sandbox AWS account. To deploy a new version of the app, commit changes and unblock the deploy
+step in CI pipeline.
+* Gitlab runner config details [here](https://mantelgroup.atlassian.net/wiki/spaces/OP/pages/629243910/GitLab+CI+Setup)

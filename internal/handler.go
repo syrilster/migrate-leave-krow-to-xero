@@ -2,14 +2,16 @@ package internal
 
 import (
 	"bytes"
-	"github.com/syrilster/migrate-leave-krow-to-xero/internal/config"
-	"io"
-	"net/http"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/syrilster/migrate-leave-krow-to-xero/internal/config"
 	"github.com/syrilster/migrate-leave-krow-to-xero/internal/util"
 	"github.com/tealeg/xlsx"
+	"io"
+	"net/http"
+	"path/filepath"
 )
+
+const supportedFileFormat = ".xlsx"
 
 //Handler func
 func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http.Request) {
@@ -18,7 +20,20 @@ func Handler(xeroHandler XeroAPIHandler) func(res http.ResponseWriter, req *http
 		contextLogger := log.WithContext(ctx)
 
 		var errResult []string
-		err := parseRequestBody(req)
+		_, fileHeader, err := req.FormFile("file")
+		if err != nil {
+			contextLogger.WithError(err).Error("Failed to get the file from request")
+			util.WithBodyAndStatus(nil, http.StatusBadRequest, res)
+			return
+		}
+
+		if filepath.Ext(fileHeader.Filename) != supportedFileFormat {
+			contextLogger.WithError(err).Error("Unable to open the uploaded file. Please confirm the file is in .xlsx format.")
+			util.WithBodyAndStatus(nil, http.StatusBadRequest, res)
+			return
+		}
+
+		err = parseRequestBody(req)
 		if err != nil {
 			util.WithBodyAndStatus(nil, http.StatusInternalServerError, res)
 			return

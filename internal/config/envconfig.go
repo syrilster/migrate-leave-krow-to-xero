@@ -19,6 +19,7 @@ type envConfig struct {
 	AuthSuccessRedirectURL string
 	AuthErrorRedirectURL   string
 	EmailTo                string
+	EmailFrom              string
 	AuthTokenFileLocation  string
 }
 
@@ -38,6 +39,7 @@ func NewEnvironmentConfig() *envConfig {
 		AuthSuccessRedirectURL: getEnvString("AUTH_SUCCESS_REDIRECT_URL", ""),
 		AuthErrorRedirectURL:   getEnvString("AUTH_ERROR_REDIRECT_URL", ""),
 		EmailTo:                getEnvString("EMAIL_TO", ""),
+		EmailFrom:              getEnvString("EMAIL_FROM", ""),
 	}
 }
 

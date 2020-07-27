@@ -28,7 +28,7 @@ class Upload extends Component {
   onClickHandler = event => {
     if (this.state.selectedFile === '') {
       toast.error('Please select a file to proceed !!');
-      return  
+      return
     }
 
     let formData = new FormData();
@@ -47,24 +47,28 @@ class Upload extends Component {
         toast.success("Leaves Processed Successfully");
       })
       .catch(err => {
-        console.log("Error: ", err.message);
-        toast.error("There were some errors. A error report has been emailed");
+        console.log(err.response.status);
+        if (err.response.status === 400) {
+          toast.error("Please upload file in Excel (.xlsx) Format");
+        } else {
+          toast.error("There were some errors. A error report has been emailed");
+        }
       });
   };
 
-  
+
   render() {
     return (
       <div class="container">
         <div class="row">
           <div class="offset-md-3 col-md-6">
                <div class="form-group files">
-                <label>Upload Leave Extract in .xlsx Format </label>
+                <label>Upload Leave Extract in Excel (.xlsx) Format </label>
                 <input type="file" class="form-control" onChange={this.onChangeHandler}/>
-              </div>  
+              </div>
               <div class="form-group">
                 <ToastContainer />
-              </div> 
+              </div>
               <button type="button" class="btn btn-success btn-block" onClick={this.onClickHandler}>Upload</button>
         </div>
       </div>

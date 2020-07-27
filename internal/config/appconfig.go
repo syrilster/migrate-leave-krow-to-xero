@@ -73,6 +73,11 @@ func (cfg *ApplicationConfig) EmailTo() string {
 	return cfg.envValues.EmailTo
 }
 
+//EmailFrom returns the From email address
+func (cfg *ApplicationConfig) EmailFrom() string {
+	return cfg.envValues.EmailFrom
+}
+
 //AuthTokenFileLocation returns the temp loc to store auth file
 func (cfg *ApplicationConfig) AuthTokenFileLocation() string {
 	return cfg.envValues.AuthTokenFileLocation

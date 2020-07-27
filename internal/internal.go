@@ -31,12 +31,13 @@ type ServerConfig interface {
 	XlsFileLocation() string
 	EmailClient() *ses.SES
 	EmailTo() string
+	EmailFrom() string
 	AuthTokenFileLocation() string
 }
 
 func SetupServer(cfg ServerConfig) *config.Server {
 	basePath := fmt.Sprintf("/%v", cfg.Version())
-	service := NewService(cfg.XeroEndpoint(), cfg.XlsFileLocation(), cfg.EmailClient(), cfg.EmailTo())
+	service := NewService(cfg.XeroEndpoint(), cfg.XlsFileLocation(), cfg.EmailClient(), cfg.EmailTo(), cfg.EmailFrom())
 	authService := auth.NewAuthService(cfg.XeroKey(), cfg.XeroSecret(), cfg.XeroAuthEndpoint(), cfg.XeroRedirectURI(), cfg.AuthTokenFileLocation())
 	server := config.NewServer().
 		WithRoutes(

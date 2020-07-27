@@ -13,7 +13,7 @@ import (
 )
 
 type ClientInterface interface {
-	GetEmployees(ctx context.Context, tenantID string) (*EmpResponse, error)
+	GetEmployees(ctx context.Context, tenantID string, page string) (*EmpResponse, error)
 	GetConnections(ctx context.Context) ([]Connection, error)
 	EmployeeLeaveBalance(ctx context.Context, tenantID string, empID string) (*LeaveBalanceResponse, error)
 	EmployeeLeaveApplication(ctx context.Context, tenantID string, request LeaveApplicationRequest) error
@@ -81,10 +81,10 @@ func (c *client) GetConnections(ctx context.Context) ([]Connection, error) {
 	return response, nil
 }
 
-func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpResponse, error) {
+func (c *client) GetEmployees(ctx context.Context, tenantID string, page string) (*EmpResponse, error) {
 	contextLogger := log.WithContext(ctx)
 	contextLogger.Info("Fetching all employees for tenant: ", tenantID)
-	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroEmployeesEndpoint(), nil)
+	httpRequest, err := http.NewRequest(http.MethodGet, c.buildXeroEmployeesEndpoint(page), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +97,7 @@ func (c *client) GetEmployees(ctx context.Context, tenantID string) (*EmpRespons
 	httpRequest.Header.Set("Authorization", "Bearer "+accessToken)
 	httpRequest.Header.Set("xero-tenant-id", tenantID)
 
+	contextLogger.Info("Calling Xero Employee Endpoint with page filter for page: ", page)
 	resp, err := c.HTTPCommand.Do(httpRequest)
 	if err != nil {
 		contextLogger.WithError(err).Errorf("there was an error calling the xero connection API. %v", err)
@@ -272,8 +273,8 @@ func (c *client) buildXeroConnectionsEndpoint() string {
 	return c.URL + "/connections"
 }
 
-func (c *client) buildXeroEmployeesEndpoint() string {
-	return c.URL + "/payroll.xro/1.0/Employees"
+func (c *client) buildXeroEmployeesEndpoint(page string) string {
+	return c.URL + "/payroll.xro/1.0/Employees?page=" + page
 }
 
 func (c *client) buildXeroLeaveBalanceEndpoint(empID string) string {
