@@ -1,9 +1,6 @@
 # migrate-leaves-to-xero
 This is a project to automate the leave migration process i.e. migrating the leaves entered in Krow tool to Xero.
 
-Confluence page [here](https://mantelgroup.atlassian.net/wiki/spaces/DIG/pages/853639229/automation+of+leave+from+krow+to+xero)
-
-
 # The Problem
 - Leave is entered by team members into krow and on weekly basis the Operations Team have to perform a manual extract of leave and enter into xero.
 - If a person has entered leave as annual leave but does not have sufficient balance the operations team have to manually split between the paid and unpaid component
